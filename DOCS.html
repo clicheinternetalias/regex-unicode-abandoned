@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Regular Expressions</title>
+<style type="text/css">
+
+table {
+  border-spacing: 0 0;
+  border-collapse: collapse;
+  max-width: 67%;
+  margin: auto;
+}
+table.wide {
+  max-width: 90%;
+}
+
+td,
+th {
+  border: 1px solid #ccc;
+  text-align: left;
+  vertical-align: top;
+  padding: 0.25em 0.5em;
+}
+td:first-of-type {
+  background-color: #e4e4ff;
+}
+code {
+  font-family: monospace;
+  background-color: #e4e4ff;
+  white-space: pre;
+}
+var {
+  font-weight: normal;
+  font-style: italic;
+  color: #080;
+}
+
+</style>
+</head>
+<body>
+
+<h1>Regular Expressions</h1>
+
+<p>This document assumes the reader is already familiar with regular expressions. If not, there are many good tutorials available on the internet.</p>
+
+<ol>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#sets">Sets</a></li>
+<li><a href="#repetition">Repetition</a></li>
+<li><a href="#properties">Properties</a></li>
+<li><a href="#grouping">Grouping</a></li>
+<li><a href="#procedures">Procedures</a></li>
+<li><a href="#look">Look-Around</a></li>
+<li><a href="#notes">Notes</a></li>
+</ol>
+
+<h2><a name="overview">Overview</a></h2>
+
+<p>Regular expressions always have free-form white-space. There is no option to disable this.</p>
+
+<p>Comments start with a number sign (&ldquo;<code>#</code>&rdquo;) and end with a vertical-space character (&ldquo;<code>{vspace}</code>&rdquo; or &ldquo;<code>\v</code>&rdquo;).</p>
+
+<p>Most non-nesting constructs (escapes) have an alternate syntax, because a single letter is insufficient for naming. This syntax is called a &ldquo;directive&rdquo; and has the form: &ldquo;<code>{<var>name</var>&nbsp;<var>args</var>}</code>&rdquo;. The directive can be negated with a caret (&ldquo;<code>^</code>&rdquo;); for example, &ldquo;<code>{^word}</code>&rdquo; is the same as &ldquo;<code>\W</code>&rdquo;.</p>
+
+<p>Any unrecognized directive will be passed as arguments to the &ldquo;<code>{prop}</code>&rdquo; directive; for example, &ldquo;<code>{gc=Mark}</code>&rdquo; is the same as &ldquo;<code>{prop&nbsp;gc=Mark}</code>&rdquo;. (See <a href="#properties">Properties</a>.)</p>
+
+<p>Directives and escapes may be used interchangeably.</p>
+
+<p>Directives cannot start with white-space, digits, or commas (&ldquo;<code>[\s\d,]</code>&rdquo;), due to an ambiguity with interval syntax.</p>
+
+<p>Escapes that specify single characters (e.g., &ldquo;<code>\n</code>&rdquo;) and nesting constructs (parentheses &ldquo;<code>()</code>&rdquo; and brackets &ldquo;<code>[]</code>&rdquo;) do not have equivalent directives.</p>
+
+<table><thead>
+<tr><th>Syntax</th><th>Description</th></tr>
+</thead><tbody>
+
+<tr><td><code>^<br>{line-start}</code></td><td>The start of a line.</td></tr>
+<tr><td><code>{^line-start}</code></td><td>Anywhere that is not the start of a line.</td></tr>
+<tr><td><code>$<br>{line-end}</code></td><td>The end of a line.</td></tr>
+<tr><td><code>{^line-end}</code></td><td>Anywhere that is not the end of a line.</td></tr>
+<tr><td><code>.<br>{any}</code></td><td>Any character (including newlines).</td></tr>
+<tr><td><code>{^any}</code></td><td>No character. The match always fails.</td></tr>
+<tr><td><code>[<var>...</var>]</code></td><td>A set of characters. (See <a href="#sets">Sets</a>.)</td></tr>
+
+<tr><td><code><var>a</var><var>b</var></code></td><td>Concatenation. Match expression <code><var>a</var></code> then match expression <code><var>b</var></code>.</td></tr>
+<tr><td><code><var>a</var>|<var>b</var></code></td><td>Either expression <code><var>a</var></code> or expression <code><var>b</var></code>.</td></tr>
+
+<tr><td><code><var>a</var>*<br><var>a</var>*?</code></td><td>Expression <code><var>a</var></code> is repeated zero or more times. (See <a href="#repetition">Repetition</a>.)</td></tr>
+<tr><td><code><var>a</var>+<br><var>a</var>+?</code></td><td>Expression <code><var>a</var></code> is repeated one or more times. (See <a href="#repetition">Repetition</a>.)</td></tr>
+<tr><td><code><var>a</var>?<br><var>a</var>??</code></td><td>Expression <code><var>a</var></code> is optional. (See <a href="#repetition">Repetition</a>.)</td></tr>
+<tr><td><code><var>a</var>{<var>n</var>}</code></td><td>Expression <code><var>a</var></code> is repeated exactly <code><var>n</var></code> times. (See <a href="#repetition">Repetition</a>.)</td></tr>
+<tr><td><code><var>a</var>{,}<br><var>a</var>{,}?</code></td><td>Expression <code><var>a</var></code> is repeated any number of times. (See <a href="#repetition">Repetition</a>.)</td></tr>
+<tr><td><code><var>a</var>{,<var>m</var>}<br><var>a</var>{,<var>m</var>}?</code></td><td>Expression <code><var>a</var></code> is repeated between zero and <code><var>m</var></code> times. (See <a href="#repetition">Repetition</a>.)</td></tr>
+<tr><td><code><var>a</var>{<var>n</var>,}<br><var>a</var>{<var>n</var>,}?</code></td><td>Expression <code><var>a</var></code> is repeated at least <code><var>n</var></code> times. (See <a href="#repetition">Repetition</a>.)</td></tr>
+<tr><td><code><var>a</var>{<var>n</var>,<var>m</var>}<br><var>a</var>{<var>n</var>,<var>m</var>}?</code></td><td>Expression <code><var>a</var></code> is repeated between <code><var>n</var></code> and <code><var>m</var></code> times. (See <a href="#repetition">Repetition</a>.)</td></tr>
+
+<tr><td><code>(<var>a</var><var>b</var><var>c</var>)</code></td><td>Sub-expression grouping. (See <a href="#grouping">Grouping</a>.)</td></tr>
+<tr><td><code>(?<var>name</var>:<var>expr</var>)</code></td><td>Sub-expression capture grouping. (See <a href="#grouping">Grouping</a>.)</td></tr>
+<tr><td><code>(?/<var>name</var>:<var>expr</var>)</code></td><td>Procedure definition. (See <a href="#procedures">Procedures</a>.)</td></tr>
+<tr><td><code>(?=<var>a</var>)</code></td><td>Look-ahead. Matches expression <code><var>a</var></code> without including it in the result. (See <a href="#look">Look-Around</a>.)</td></tr>
+<tr><td><code>(?!<var>a</var>)</code></td><td>Negative look-ahead. Same as &ldquo;<code>(?=<var>a</var>)</code>&rdquo; but only matches if expression <code><var>a</var></code> doesn't. (See <a href="#look">Look-Around</a>.)</td></tr>
+<tr><td><code>(?&lt;=<var>a</var>)</code></td><td>Look-behind. Matches expression <code><var>a</var></code> behind the current location without including it in the result. (See <a href="#look">Look-Around</a>.)</td></tr>
+<tr><td><code>(?&lt;!<var>a</var>)</code></td><td>Negative look-behind. Same as &ldquo;<code>(?&lt;=<var>a</var>)</code>&rdquo; but only matches if expression <code><var>a</var></code> doesn't. (See <a href="#look">Look-Around</a>.)</td></tr>
+<tr><td><code>(??<var>c</var><var>t</var><var>f</var>)</code></td><td>Conditional. If expression <code><var>c</var></code> (treated as look-ahead) matches, then expression <code><var>t</var></code> is tried, otherwise expression <code><var>f</var></code> is tried. (See <a href="#look">Look-Around</a>.)</td></tr>
+
+<tr><td><code>\^ \$ \. \| \[ \] \\<br>\* \+ \? \{ \# \( \)</code></td><td>The specified character. Any non-alphabetic character may be escaped in this manner.</td></tr>
+
+<tr><td><code>\a<br>{input-start}</code></td><td>The start of the input text.</td></tr>
+<tr><td><code>\A<br>{^input-start}</code></td><td>Anywhere that is not the start of the input text.</td></tr>
+<tr><td><code>\b<br>{word-break}</code></td><td>Word boundary. Matches the boundary between a word and non-word character.</td></tr>
+<tr><td><code>\B<br>{^word-break}</code></td><td>Anywhere that is not a word-boundary.</td></tr>
+<tr><td><code>\c<br>{close-brace}</code></td><td>A closing bracket or quote character.</td></tr>
+<tr><td><code>\C<br>{^close-brace}</code></td><td>Not a closing bracket or quote character.</td></tr>
+<tr><td><code>\d<br>{digit}</code></td><td>A digit. (All Unicode digits are recognized.)</td></tr>
+<tr><td><code>\D<br>{^digit}</code></td><td>Not a digit.</td></tr>
+<tr><td><code>\g<var>proc</var>;<br>{call <var>proc</var>}<br>{$<var>proc</var>}</code></td><td>Match a procedure. (See <a href="#procedures">Procedures</a>.)</td></tr>
+<tr><td><code>\G<var>proc</var>;<br>{^call <var>proc</var>}<br>{^$<var>proc</var>}</code></td><td>Assert that a procedure does not match. (See <a href="#procedures">Procedures</a>.)</td></tr>
+<tr><td><code>\h<br>{hspace}</code></td><td>A horizontal white-space character (no line or paragraph breaks).</td></tr>
+<tr><td><code>\H<br>{^hspace}</code></td><td>Not a horizontal white-space character.</td></tr>
+<tr><td><code>\k<var>group</var>;<br>{ref <var>group</var>}<br>{=<var>group</var>}</code></td><td>Match a sub-group. (See <a href="#grouping">Grouping</a>.)</td></tr>
+<tr><td><code>\K<var>group</var>;<br>{^ref <var>group</var>}<br>{^=<var>group</var>}</code></td><td>Assert that a sub-group does not match. (See <a href="#grouping">Grouping</a>.)</td></tr>
+<tr><td><code>\m<var>group</var>;<br>{ref-braced <var>group</var>}<br>{:<var>group</var>}</code></td><td>Match a sub-group, possibly with inverted brackets. (See <a href="#grouping">Grouping</a>.)</td></tr>
+<tr><td><code>\M<var>group</var>;<br>{^ref-braced <var>group</var>}<br>{^:<var>group</var>}</code></td><td>Assert that a sub-group does not match, not even with inverted brackets. (See <a href="#grouping">Grouping</a>.)</td></tr>
+<tr><td><code>\n</code></td><td>A newline character.</td></tr>
+<tr><td><code>\o<br>{open-brace}</code></td><td>An opening bracket or quote character.</td></tr>
+<tr><td><code>\O<br>{^open-brace}</code></td><td>Not an opening bracket or quote character.</td></tr>
+<tr><td><code>\p{<var>...</var>}<br>{prop <var>...</var>}<br>{<var>...</var>}</code></td><td>Characters matching Unicode properties. (See <a href="#properties">Properties</a>.)</td></tr>
+<tr><td><code>\P{<var>...</var>}<br>{^prop <var>...</var>}<br>{^<var>...</var>}</code></td><td>Characters not matching Unicode properties. (See <a href="#properties">Properties</a>.)</td></tr>
+<tr><td><code>\r</code></td><td>A carriage return character.</td></tr>
+<tr><td><code>\s<br>{space}</code></td><td>A white-space character.</td></tr>
+<tr><td><code>\S<br>{^space}</code></td><td>Not a white-space character.</td></tr>
+<tr><td><code>\t</code></td><td>A tab character.</td></tr>
+<tr><td><code>\v<br>{vspace}</code></td><td>A vertical white-space character (line and paragraph breaks).</td></tr>
+<tr><td><code>\V<br>{^vspace}</code></td><td>Not a vertical white-space character.</td></tr>
+<tr><td><code>\w<br>{word}</code></td><td>A word character (alphabetic, numeric, and underscore).</td></tr>
+<tr><td><code>\W<br>{^word}</code></td><td>Not a word character.</td></tr>
+<tr><td><code>\x<var>HEX</var>;</code></td><td>A character specified by at least one hexadecimal digit. Any Unicode code point may be specified. The semi-colon (&ldquo;<code>;</code>&rdquo;) is required.</td></tr>
+<tr><td><code>\z<br>{input-end}</code></td><td>The end of the input text.</td></tr>
+<tr><td><code>\Z<br>{^input-end}</code></td><td>Anywhere that is not the end of the input text.</td></tr>
+
+</tbody></table>
+
+<h2><a name="sets">Sets</a></h2>
+
+<p>Characters not in the table below have no special meaning as they might outside of a set.
+
+The character &ldquo;<code>^</code>&rdquo; is only special as the first non-whitespace character in the set.</p>
+
+<p>Set operations have the same precedence and are evaluated from left to right. Complement is applied last to the entire set.</p>
+
+<p>Union has the same precedence as other set operations. For example, &ldquo;<code>[ab[bc]-[ac]]</code>&rdquo; will union &ldquo;<code>a</code>&rdquo;, &ldquo;<code>b</code>&rdquo;, and &ldquo;<code>[bc]</code>&rdquo; before subtracting &ldquo;<code>[ac]</code>&rdquo;.</p>
+
+<p>Only a single set element after the set operators will be recognized. Complex sets and ranges after the operator must be enclosed in square brackets (&ldquo;<code>[]</code>&rdquo;).</p>
+
+<table><thead>
+<tr><th>Syntax</th><th>Description</th></tr>
+</thead><tbody>
+
+<tr><td><code>^<var>...</var></code></td><td>Complement. The result is only those characters not in the set.</td></tr>
+<tr><td><code><var>a</var><br>\n</code></td><td>A single character. All escapes that match single characters are allowed.</td></tr>
+<tr><td><code>\^ \[ \] \- \~ \&amp; \\</code></td><td>The specified character.</td></tr>
+<tr><td><code>[<var>...</var>]<br>\w<br>{word}</code></td><td>A subset. All escapes and directives that match sets of characters are allowed as subsets.</td></tr>
+<tr><td><code><var>a</var><var>b</var></code></td><td>Union. The result contains both <code><var>a</var></code> and <code><var>b</var></code>.</td></tr>
+<tr><td><code><var>a</var>-<var>b</var></code></td><td>Character range or set subtraction. If <code><var>a</var></code> and <code><var>b</var></code> are characters, every character between <code><var>a</var></code> and <code><var>b</var></code> (inclusive) will be included in the set. If <code><var>b</var></code> is a subset, the result is only those characters contained in set <code><var>a</var></code> that are not in set <code><var>b</var></code>.</td></tr>
+<tr><td><code><var>a</var>~<var>b</var></code></td><td>Symmetric difference. Only those characters contained in one of the sets but not both will be included in the result.</td></tr>
+<tr><td><code><var>a</var>&amp;<var>b</var></code></td><td>Intersection. The result is only those characters contained in both sets.</td></tr>
+
+</tbody></table>
+
+<p>The following table shows how various resulting sets can be formed. The numbers &ldquo;0&rdquo;, &ldquo;1&rdquo;, &ldquo;2&rdquo;, and &ldquo;3&rdquo; represent the elements included in neither set, the first set, the second set, and both sets, respectively.</p>
+
+<table><thead>
+<tr><th>Expression</th><th>Contains</th></tr>
+</thead><tbody>
+
+<tr><td><code>[^[13][23]]</code></td><td>0</td></tr>
+<tr><td><code>[[13]-[23]]</code></td><td>1</td></tr>
+<tr><td><code>[[23]-[13]]</code></td><td>2</td></tr>
+<tr><td><code>[[13]&amp;[23]]</code></td><td>3</td></tr>
+<tr><td><code>[^23]</code></td><td>0,1</td></tr>
+<tr><td><code>[^13]</code></td><td>0,2</td></tr>
+<tr><td><code>[^[13]~[23]]</code></td><td>0,3</td></tr>
+<tr><td><code>[[13]~[23]]</code></td><td>1,2</td></tr>
+<tr><td><code>[13]</code></td><td>1,3</td></tr>
+<tr><td><code>[23]</code></td><td>2,3</td></tr>
+<tr><td><code>[^[13]&amp;[23]]</code></td><td>0,1,2</td></tr>
+<tr><td><code>[^[23]-[13]]</code></td><td>0,1,3</td></tr>
+<tr><td><code>[^[13]-[23]]</code></td><td>0,2,3</td></tr>
+<tr><td><code>[[13][23]]</code></td><td>1,2,3</td></tr>
+
+</tbody></table>
+
+<h2><a name="repetition">Repetition</a></h2>
+
+<p>An interval (&ldquo;<code>{<var>n</var>,<var>m</var>}</code>&rdquo;) may be empty (&ldquo;<code>{}</code>&rdquo;) or contain only a single comma (&ldquo;<code>{,}</code>&rdquo;). This is the same as an asterisk (&ldquo;<code>*</code>&rdquo;).</p>
+
+<p>The maximum value for an interval bound is 65535. The minimum is 0.</p>
+
+<p>A missing lower bound is the same as zero. A missing upper bound or an upper bound of zero is the same as infinity.</p>
+
+<p>White-space is allowed inside the interval: &ldquo;<code><var>a</var>{&nbsp;5&nbsp;,&nbsp;23&nbsp;}</code>&rdquo;.</p>
+
+<p>If a question-mark (&ldquo;<code>?</code>&rdquo;) follows a repetition (or interval), the repetition will prefer fewer repetitions (&ldquo;non-greedy&rdquo;). Without the question-mark, the repetition will prefer longer matches (&ldquo;greedy&rdquo;).</p>
+
+<p>White-space is not allowed before the non-greedy question-mark.</p>
+
+<h2><a name="properties">Properties</a></h2>
+
+<p>The syntax for the arguments passed to &ldquo;<code>{prop}</code>&rdquo; is taken directly from <a href="http://userguide.icu-project.org/strings/unicodeset">ICU Sets</a> which probably implements <a href="http://www.unicode.org/reports/tr18/">UTS18: Unicode Regular Expressions</a> &sect; 1.3, but is not documented as doing so.</p>
+
+<p>Supported properties and their values (properties without values are boolean):</p>
+
+<table class="wide"><thead>
+<tr><th>Names</th><th>Values</th></tr>
+</thead><tbody>
+<tr><td>Age</td><td>1.1, 2.0, 2.1, 3.0, 3.1, 3.2, 4.0, 4.1, 5.0, 5.1, 5.2, 6.0, 6.1, 6.2, 6.3, 7.0, unassigned (no loose matching)</td></tr>
+<tr><td>Alphabetic, Alpha</td><td>&nbsp;</td></tr>
+<tr><td>ASCII_Hex_Digit, AHex</td><td>&nbsp;</td></tr>
+<tr><td>Bidi_Class, bc</td><td>AL, AN, B , BN, CS, EN, ES, ET, FSI, L, LRE, LRI, LRO, NSM, ON, PDF, PDI, R, RLE, RLI, RLO, S, WS (See <a href="http://unicode.org/reports/tr44/#Bidi_Class_Values">UAX44 &sect; 5.7.2</a>.)</td></tr>
+<tr><td>Bidi_Control, Bidi_C</td><td>&nbsp;</td></tr>
+<tr><td>Bidi_Mirrored, Bidi_M</td><td>&nbsp;</td></tr>
+<tr><td>Block, blk</td><td>Aegean_Numbers, Alchemical, Alphabetic_PF, Ancient_Greek_Music, Ancient_Greek_Numbers, Ancient_Symbols, Arabic, Arabic_Ext_A, Arabic_Math, Arabic_PF_A, Arabic_PF_B, Arabic_Sup, Armenian, Arrows, ASCII, Avestan, Balinese, Bamum, Bamum_Sup, Bassa_Vah, Batak, Bengali, Block_Elements, Bopomofo, Bopomofo_Ext, Box_Drawing, Brahmi, Braille, Buginese, Buhid, Byzantine_Music, Carian, Caucasian_Albanian, Chakma, Cham, Cherokee, CJK, CJK_Compat, CJK_Compat_Forms, CJK_Compat_Ideographs, CJK_Compat_Ideographs_Sup, CJK_Ext_A, CJK_Ext_B, CJK_Ext_C, CJK_Ext_D, CJK_Radicals_Sup, CJK_Strokes, CJK_Symbols, Compat_Jamo, Control_Pictures, Coptic, Coptic_Epact_Numbers, Counting_Rod, Cuneiform, Cuneiform_Numbers, Currency_Symbols, Cypriot_Syllabary, Cyrillic, Cyrillic_Ext_A, Cyrillic_Ext_B, Cyrillic_Sup, Deseret, Devanagari, Devanagari_Ext, Diacriticals, Diacriticals_For_Symbols, Diacriticals_Sup, Diacriticals_Ext, Dingbats, Domino, Duployan, Egyptian_Hieroglyphs, Elbasan, Emoticons, Enclosed_Alphanum, Enclosed_Alphanum_Sup, Enclosed_CJK, Enclosed_Ideographic_Sup, Ethiopic, Ethiopic_Ext, Ethiopic_Ext_A, Ethiopic_Sup, Geometric_Shapes, Geometric_Shapes_Ext, Georgian, Georgian_Sup, Glagolitic, Gothic, Grantha, Greek, Greek_Ext, Gujarati, Gurmukhi, Half_And_Full_Forms, Half_Marks, Hangul, Hanunoo, Hebrew, High_PU_Surrogates, High_Surrogates, Hiragana, IDC, Imperial_Aramaic, Indic_Number_Forms, Inscriptional_Pahlavi, Inscriptional_Parthian, IPA_Ext, Jamo, Jamo_Ext_A, Jamo_Ext_B, Javanese, Kaithi, Kana_Sup, Kanbun, Kangxi, Kannada, Katakana, Katakana_Ext, Kayah_Li, Kharoshthi, Khmer, Khmer_Symbols, Khojki, Khudawadi, Lao, Latin_1_Sup, Latin_Ext_A, Latin_Ext_Additional, Latin_Ext_B, Latin_Ext_C, Latin_Ext_D, Latin_Ext_E, Lepcha, Letterlike_Symbols, Limbu, Linear_A, Linear_B_Ideograms, Linear_B_Syllabary, Lisu, Low_Surrogates, Lycian, Lydian, Mahajani, Mahjong, Malayalam, Mandaic, Manichaean, Math_Alphanum, Math_Operators, Meetei_Mayek, Meetei_Mayek_Ext, Mende_Kikakui, Meroitic_Cursive, Meroitic_Hieroglyphs, Miao, Misc_Arrows, Misc_Math_Symbols_A, Misc_Math_Symbols_B, Misc_Pictographs, Misc_Symbols, Misc_Technical, Modi, Modifier_Letters, Modifier_Tone_Letters, Mongolian, Mro, Music, Myanmar, Myanmar_Ext_A, Myanmar_Ext_B, Nabataean, NB, New_Tai_Lue, NKo, Number_Forms, OCR, Ogham, Ol_Chiki, Old_Italic, Old_North_Arabian, Old_Permic, Old_Persian, Old_South_Arabian, Old_Turkic, Oriya, Ornamental_Dingbats, Osmanya, Pahawh_Hmong, Palmyrene, Pau_Cin_Hau, Phags_Pa, Phaistos, Phoenician, Phonetic_Ext, Phonetic_Ext_Sup, Playing_Cards, Psalter_Pahlavi, PUA, Punctuation, Rejang, Rumi, Runic, Samaritan, Saurashtra, Sharada, Shavian, Shorthand_Format_Controls, Siddham, Sinhala, Sinhala_Archaic_Numbers, Small_Forms, Sora_Sompeng, Specials, Sundanese, Sundanese_Sup, Sup_Arrows_A, Sup_Arrows_B, Sup_Arrows_C, Sup_Math_Operators, Sup_PUA_A, Sup_PUA_B, Sup_Punctuation, Super_And_Sub, Syloti_Nagri, Syriac, Tagalog, Tagbanwa, Tags, Tai_Le, Tai_Tham, Tai_Viet, Tai_Xuan_Jing, Takri, Tamil, Telugu, Thaana, Thai, Tibetan, Tifinagh, Tirhuta, Transport_And_Map, UCAS, UCAS_Ext, Ugaritic, Vai, Vedic_Ext, Vertical_Forms, VS, VS_Sup, Warang_Citi, Yi_Radicals, Yi_Syllables, Yijing (See <a href="http://www.unicode.org/versions/latest/">Unicode</a>.)</td></tr>
+<tr><td>Canonical_Combining_Class, ccc</td><td>integer (See <a href="http://unicode.org/reports/tr44/#Canonical_Combining_Class_Values">UAX44 &sect; 5.7.4</a>.)</td></tr>
+<tr><td>Case_Ignorable, CI</td><td>&nbsp;</td></tr>
+<tr><td>Cased</td><td>&nbsp;</td></tr>
+<tr><td>Changes_When_Casefolded, CWCF</td><td>&nbsp;</td></tr>
+<tr><td>Changes_When_Casemapped, CWCM</td><td>&nbsp;</td></tr>
+<tr><td>Changes_When_NFKC_Casefolded, CWKCF</td><td>&nbsp;</td></tr>
+<tr><td>Changes_When_Lowercased, CWL</td><td>&nbsp;</td></tr>
+<tr><td>Changes_When_Titlecased, CWT</td><td>&nbsp;</td></tr>
+<tr><td>Changes_When_Uppercased, CWU</td><td>&nbsp;</td></tr>
+<tr><td>Dash</td><td>&nbsp;</td></tr>
+<tr><td>Decomposition_Type, dt</td><td>can, com, enc, fin, font, fra, init, iso, med, nar, nb, sml, sqr, sub, sup, vert, wide, none (See <a href="http://unicode.org/reports/tr44/#Character_Decomposition_Mappings">UAX44 &sect; 5.7.3</a>.)</td></tr>
+<tr><td>Default_Ignorable_Code_Point, DI</td><td>&nbsp;</td></tr>
+<tr><td>Deprecated, Dep</td><td>&nbsp;</td></tr>
+<tr><td>Diacritic, Dia</td><td>&nbsp;</td></tr>
+<tr><td>East_Asian_Width, ea</td><td>A, F, H, N, Na, W (See <a href="http://www.unicode.org/reports/tr11/">UAX11</a>.)</td></tr>
+<tr><td>Extender, Ext</td><td>&nbsp;</td></tr>
+<tr><td>Full_Composition_Exclusion</td><td>&nbsp;</td></tr>
+<tr><td>General_Category, gc</td><td>Lu, Ll, Lt, Lm, Lo, Mn, Mc, Me, Nd, Nl, No, Pc, Pd, Ps, Pe, Pi, Pf, Po, Sm, Sc, Sk, So, Zs, Zl, Zp, Cc, Cf, Cs, Co, Cn (See <a href="http://unicode.org/reports/tr44/#General_Category_Values">UAX44 &sect; 5.7.1</a>.)</td></tr>
+<tr><td>Grapheme_Base, Gr_Base</td><td>&nbsp;</td></tr>
+<tr><td>Grapheme_Cluster_Break, GCB</td><td>CN, CR, EX, L, LF, LV, LVT, PP, RI, SM, T, V, XX (See <a href="http://www.unicode.org/reports/tr29/">UAX29</a>.)</td></tr>
+<tr><td>Grapheme_Extend, Gr_Ext</td><td>&nbsp;</td></tr>
+<tr><td>Grapheme_Link, Gr_Link</td><td>&nbsp;</td></tr>
+<tr><td>Hangul_Syllable_Type, hst</td><td>L, LV, LVT, T, V, NA (See <a href="http://www.unicode.org/versions/latest/">Unicode</a>.)</td></tr>
+<tr><td>Hex_Digit, Hex</td><td>&nbsp;</td></tr>
+<tr><td>Hyphen</td><td>&nbsp;</td></tr>
+<tr><td>ID_Continue, IDC</td><td>&nbsp;</td></tr>
+<tr><td>ID_Start, IDS</td><td>&nbsp;</td></tr>
+<tr><td>Ideographic, Ideo</td><td>&nbsp;</td></tr>
+<tr><td>IDS_Binary_Operator, IDSB</td><td>&nbsp;</td></tr>
+<tr><td>IDS_Triary_Operator, IDST</td><td>&nbsp;</td></tr>
+<tr><td>Join_Control, Join_C</td><td>&nbsp;</td></tr>
+<tr><td>Joining_Group, jg</td><td>Ain, Alaph, Alef, Alef_Maqsurah, Beh, Beth, Burushaski_Yeh_Barree, Dal, Dalath_Rish, E, Farsi_Yeh, Fe, Feh, Final_Semkath, Gaf, Gamal, Hah, Hamza_On_Heh_Goal, He, Heh, Heh_Goal, Heth, Kaf, Kaph, Khaph, Knotted_Heh, Lam, Lamadh, Manichaean_Aleph, Manichaean_Ayin, Manichaean_Beth, Manichaean_Daleth, Manichaean_Dhamedh, Manichaean_Five, Manichaean_Gimel, Manichaean_Heth, Manichaean_Hundred, Manichaean_Kaph, Manichaean_Lamedh, Manichaean_Mem, Manichaean_Nun, Manichaean_One, Manichaean_Pe, Manichaean_Qoph, Manichaean_Resh, Manichaean_Sadhe, Manichaean_Samekh, Manichaean_Taw, Manichaean_Ten, Manichaean_Teth, Manichaean_Thamedh, Manichaean_Twenty, Manichaean_Waw, Manichaean_Yodh, Manichaean_Zayin, Meem, Mim, No_Joining_Group, Noon, Nun, Nya, Pe, Qaf, Qaph, Reh, Reversed_Pe, Rohingya_Yeh, Sad, Sadhe, Seen, Semkath, Shin, Straight_Waw, Swash_Kaf, Syriac_Waw, Tah, Taw, Teh_Marbuta, Teh_Marbuta_Goal, Teth, Waw, Yeh, Yeh_Barree, Yeh_With_Tail, Yudh, Yudh_He, Zain, Zhain (See <a href="http://www.unicode.org/versions/latest/">Unicode</a>.)</td></tr>
+<tr><td>Joining_Type, jt</td><td>U, C, T, D, L, R (See <a href="http://www.unicode.org/versions/latest/">Unicode</a>.)</td></tr>
+<tr><td>Line_Break, lb</td><td>AI, AL, B2, BA, BB, BK, CB, CJ, CL, CM, CP, CR, EX, GL, H2, H3, HL, HY, ID, IN, IS, JL, JT, JV, LF, NL, NS, NU, OP, PO, PR, QU, RI, SA, SG, SP, SY, WJ, XX, ZW (See <a href="http://www.unicode.org/reports/tr14/">UAX14</a>.)</td></tr>
+<tr><td>Logical_Order_Exception, LOE</td><td>&nbsp;</td></tr>
+<tr><td>Lowercase, Lower</td><td>&nbsp;</td></tr>
+<tr><td>Math</td><td>&nbsp;</td></tr>
+<tr><td>Name, na</td><td>ASCII string (no loose matching)</td></tr>
+<tr><td>NFC_Quick_Check, NFC_QC</td><td>y, n, m</td></tr>
+<tr><td>NFD_Quick_Check, NFD_QC</td><td>y, n, m</td></tr>
+<tr><td>NFKC_Quick_Check, NFKC_QC</td><td>y, n, m</td></tr>
+<tr><td>NFKD_Quick_Check, NFKD_QC</td><td>y, n, m</td></tr>
+<tr><td>Noncharacter_Code_Point, NChar</td><td>&nbsp;</td></tr>
+<tr><td>Numeric_Type, nt</td><td>None, De, Di, Nu (See <a href="http://www.unicode.org/versions/latest/">Unicode</a>.)</td></tr>
+<tr><td>Numeric_Value, nv</td><td>integer, fraction, or NaN</td></tr>
+<tr><td>Pattern_Syntax, Pat_Syn</td><td>&nbsp;</td></tr>
+<tr><td>Pattern_White_Space, Pat_WS</td><td>&nbsp;</td></tr>
+<tr><td>Quotation_Mark, QMark</td><td>&nbsp;</td></tr>
+<tr><td>Radical</td><td>&nbsp;</td></tr>
+<tr><td>Script, sc</td><td>Aghb, Arab, Armi, Armn, Avst, Bali, Bamu, Bass, Batk, Beng, Bopo, Brah, Brai, Bugi, Buhd, Cakm, Cans, Cari, Cham, Cher, Copt, Cprt, Cyrl, Deva, Dsrt, Dupl, Elba, Egyp, Ethi, Geor, Glag, Goth, Gran, Grek, Gujr, Guru, Hang, Hani, Hano, Hebr, Hira, Hmng, Hrkt, Ital, Java, Kali, Kana, Khar, Khmr, Khoj, Knda, Kthi, Lana, Laoo, Latn, Lepc, Limb, Lina, Linb, Lisu, Lyci, Lydi, Mahj, Mand, Mani, Mend, Merc, Mero, Mlym, Modi, Mong, Mroo, Mtei, Mymr, Narb, Nbat, Nkoo, Ogam, Olck, Orkh, Orya, Osma, Palm, Pauc, Perm, Phag, Phli, Phlp, Phnx, Plrd, Prti, Qaai, Rjng, Runr, Samr, Sarb, Saur, Shaw, Shrd, Sidd, Sind, Sinh, Sora, Sund, Sylo, Syrc, Tagb, Takr, Tale, Talu, Taml, Tavt, Telu, Tfng, Tglg, Thaa, Thai, Tibt, Tirh, Ugar, Vaii, Wara, Xpeo, Xsux, Yiii, Zinh, Zyyy, Zzzz (See <a href="http://www.unicode.org/reports/tr24/">UAX24</a>.)</td></tr>
+<tr><td>Sentence_Break, SB</td><td>AT, CL, CR, EX, FO, LE, LF, LO, NU, SC, SE, SP, ST, UP, XX (See <a href="http://www.unicode.org/reports/tr29/">UAX29</a>.)</td></tr>
+<tr><td>Soft_Dotted, SD</td><td>&nbsp;</td></tr>
+<tr><td>STerm</td><td>&nbsp;</td></tr>
+<tr><td>Terminal_Punctuation, Term</td><td>&nbsp;</td></tr>
+<tr><td>Unified_Ideograph, UIdeo</td><td>&nbsp;</td></tr>
+<tr><td>Uppercase, Upper</td><td>&nbsp;</td></tr>
+<tr><td>White_Space, WSpace</td><td>&nbsp;</td></tr>
+<tr><td>Word_Break, WB</td><td>CR, DQ, EX, Extend, FO, HL, KA, LE, LF, MB, ML, MN, NL, NU, RI, SQ, XX (See <a href="http://www.unicode.org/reports/tr29/">UAX29</a>.)</td></tr>
+<tr><td>XID_Continue, XIDC</td><td>&nbsp;</td></tr>
+<tr><td>XID_Start, XIDS</td><td>&nbsp;</td></tr>
+</tbody></table>
+
+<p>Also supported are POSIX character classes:</p>
+
+<table><thead>
+<tr><th>Name</th><th>Expression</th></tr>
+</thead><tbody>
+<tr><td><code>alnum</code></td><td><code>[{prop alpha} {prop digit}]</code></td></tr>
+<tr><td><code>alpha</code></td><td><code>{prop Alphabetic}</code></td></tr>
+<tr><td><code>blank</code></td><td><code>[{prop gc=Space_Separator} {prop name=CHARACTER TABULATION}]</code></td></tr>
+<tr><td><code>cntrl</code></td><td><code>{prop gc=Control}</code></td></tr>
+<tr><td><code>digit</code></td><td><code>{prop gc=Decimal_Number}</code></td></tr>
+<tr><td><code>graph</code></td><td><code>[^{prop space} {prop gc=Control} {prop gc=Surrogate} {prop gc=Unassigned}]</code></td></tr>
+<tr><td><code>lower</code></td><td><code>{prop Lowercase}</code></td></tr>
+<tr><td><code>print</code></td><td><code>[[{prop graph} {prop blank}] - {prop cntrl}]</code></td></tr>
+<tr><td><code>punct</code></td><td><code>{prop gc=Punctuation}</code></td></tr>
+<tr><td><code>upper</code></td><td><code>{prop Uppercase}</code></td></tr>
+<tr><td><code>word</code></td><td><code>[{prop alpha} {prop gc=Mark} {prop digit} {prop gc=Connector_Punctuation} {prop Join_Control}]</code></td></tr>
+<tr><td><code>xdigit</code></td><td><code>[{prop gc=Decimal_Number} {prop Hex_Digit}]</code></td></tr>
+</tbody></table>
+
+<h2><a name="grouping">Grouping</a></h2>
+
+<p>Parentheses perform sub-expression grouping without capture. This is the opposite of Perl-like regular expressions. Reasons for this change include: (a) sub-expressions are needed more often than capturing, (b) implied numbered capturing is confusing and error-prone, and (c) the syntax &ldquo;<code>(?:)</code>&rdquo; works well for names.</p>
+
+<p>Groups and procedures have separate namespaces.</p>
+
+<p>Names may not contain white-space, close brace (&ldquo;<code>}</code>&rdquo;), colon (&ldquo;<code>:</code>&rdquo;), or semi-colon (&ldquo;<code>;</code>&rdquo;), but may be further restricted to only the characters in &ldquo;<code>{word}</code>&rdquo; in future versions.</p>
+
+<p>Multiple capture groups may have the same name, to allow Perl-like branch-resetting. Only one sub-match will be shared by the same-named capture groups.</p>
+
+<p>A back-reference to a capture group may occur before the capture group's definition, but this is probably not useful (the capture group will not have matched anything yet).</p>
+
+<p>Every back-reference to a capture group will match the same text that was matched by the capture group.</p>
+
+<p>The entire match is named the empty string (&ldquo;&rdquo;) and cannot be referenced from within the regex (it will always be incomplete).</p>
+
+<p>Capture groups may be used inside of look-around, but back-referencing them from outside of the look-around is undefined.</p>
+
+<p>Brace-matching refers to certain characters that are mostly used in pairs to open and close sub-strings (parentheses, quotes, braces). The set of braces recognized is Unicode's Bidi-Brackets and characters under Category Pi/Pf or Ps/Pe with matching names (after removing &ldquo;LEFT&rdquo; or &ldquo;RIGHT&rdquo;).</p>
+
+<p>In a brace-matched reference, brace characters will not match themselves (i.e., an open-parenthesis (&ldquo;<code>(</code>&rdquo;) won't match an open-parenthesis). Non-brace characters will match themselves.</p>
+
+<h2><a name="procedures">Procedures</a></h2>
+
+<p>Procedures and groups have separate namespaces.</p>
+
+<p>Names may not contain white-space, close brace (&ldquo;<code>}</code>&rdquo;), colon (&ldquo;<code>:</code>&rdquo;), or semi-colon (&ldquo;<code>;</code>&rdquo;), but may be further restricted to only the characters in &ldquo;<code>{word}</code>&rdquo; in future versions.</p>
+
+<p>Multiple procedures cannot have the same name.</p>
+
+<p>A procedure call may occur before the procedure's definition.</p>
+
+<p>Each procedure call may match different text.</p>
+
+<p>Procedures are recursive: they can be called from within themselves.</p>
+
+<h2><a name="look">Look-Around</a></h2>
+
+<p>Look-arounds may contain any valid regular expression. There are no restrictions on either look-ahead or look-behind.</p>
+
+<p>Look-arounds may be nested.</p>
+
+<p>Capture groups may be used inside of look-around, but back-referencing them from outside of the look-around is undefined.</p>
+
+<h2><a name="notes">Notes</a></h2>
+
+<p>The regex engine uses a &ldquo;Pike VM&rdquo; which does not perform back-tracking.</p>
+
+</body>
+</html>
