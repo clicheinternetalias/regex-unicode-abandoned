@@ -1,0 +1,227 @@
+<!-- rgx="pattern" str="input" ANONYMOUS="entire-match" name-of-group="sub-match" -->
+<!-- missing ANONYMOUS or name-of-group is considered "failed to match" -->
+
+<test rgx="[{word}-{digit}]+"   str="ab9" ="ab"/>
+
+<test rgx="{^line-start}a."    str="abac" ="ac"/>
+
+<test rgx="{prop xdigit}+" str="012abc" ="012abc"/>
+<test rgx="{xdigit}+" str="012abc" ="012abc"/>
+
+<test rgx="(?/foo:abc){$foo}"               str="abc" ="abc"/>
+<test rgx="(?/foo:abc){call foo}"           str="abc" ="abc"/>
+<test rgx="{open-brace}abc{close-brace}"    str="[abc]" ="[abc]"/>
+<test rgx="{digit}+"     str="123" ="123"/>
+<test rgx="{^digit}+"    str="abc" ="abc"/>
+<test rgx="{word}+"      str="abc" ="abc"/>
+<test rgx="{^word}+"     str="---" ="---"/>
+
+<test rgx="(?open:\[) foo {ref open}" str="[foo[" ="[foo[" open="["/>
+<test rgx="(?open:\o) foo {ref open}" str="[foo[" ="[foo[" open="["/>
+<test rgx="(?open:\[) foo {ref-braced open}" str="[foo]" ="[foo]" open="["/>
+<test rgx="(?open:\o) foo {ref-braced open}" str="[foo]" ="[foo]" open="["/>
+
+<test rgx="abc{prop name=LATIN SMALL LETTER D}ef" str="abcdef" ="abcdef"/>
+<!--test rgx="abc{prop name=latinsmallletterd}ef" str="abcdef" ="abcdef"/-->
+
+<test rgx="{line-start}abc"           str="abc" ="abc"/>
+<test rgx="{line-start}bc"            str="abc"/>
+<test rgx="abc{line-end}"             str="abc" ="abc"/>
+<test rgx="ab{line-end}"              str="abc"/>
+<test rgx="{line-start}abc{line-end}" str="abc" ="abc"/>
+<test rgx="{line-start}b{line-end}"   str="abc"/>
+<test rgx="{line-start}b{line-end}"   str="bc"/>
+<test rgx="{line-start}b{line-end}"   str="ab"/>
+
+<test rgx="(?open:\[) foo \mopen;" str="[foo]" ="[foo]" open="["/>
+<test rgx="(?open:\o) foo \mopen;" str="[foo]" ="[foo]" open="["/>
+
+<test rgx="[ab-[bc]]" str="a" ="a"/>
+<test rgx="[ab-[bc]]" str="b"/>
+<test rgx="[ab~[bc]]" str="a" ="a"/>
+<test rgx="[ab~[bc]]" str="c" ="c"/>
+<test rgx="[ab~[bc]]" str="b"/>
+<test rgx="[ab&[bc]]" str="a"/>
+<test rgx="[ab&[bc]]" str="b" ="b"/>
+<test rgx="[ab&[bc]]" str="c"/>
+
+<test rgx="abc\p{name=LATIN SMALL LETTER D}ef" str="abcdef" ="abcdef"/>
+<!--test rgx="abc\p{name=latinsmallletterd}ef" str="abcdef" ="abcdef"/-->
+
+<test rgx="xabcy(?/1:abc)(?<=x\g1;y)def" str="xabcydef" ="xabcydef"/>
+<test rgx="(?/1:abc)xabcy(?<=x(??\g1;(abc)(z))y)def" str="xabcydefghi" ="xabcydef"/>
+<test rgx="x(?1:abc)y(?<=x\k1;y)def" str="xabcydef" ="xabcydef" 1="abc"/>
+
+<test rgx="a(??(b)cd)e" str="abcde"/>
+<test rgx="a(??(b|c)cd)e" str="ace" = "ace"/>
+<test rgx="a(??(b)cd)e" str="ade" = "ade"/>
+<test rgx="a(??(b|d)cd)e" str="ade"/>
+<test rgx="a(??(b|d)cd)e" str="ace"/>
+<test rgx="a(??(b|d)cd)e" str="abe"/>
+
+<test rgx="(?aa:abc)def\kaa;ghi" str="abcdefabcghi" ="abcdefabcghi" aa="abc"/>
+<test rgx="(?aa:abc)def\Kaa;ghi" str="abcdefghi"    ="abcdefghi"    aa="abc"/>
+<test rgx="(?aa:abc)def\kaa;ghi" str="abcdefghi"/>
+<test rgx="(?aa:abc)def\Kaa;ghi" str="abcdefabcghi"/>
+
+<test rgx="(?aa:abc)?def\kaa;ghi" str="defabcghi"/>
+<test rgx="(?aa:abc)?def\kaa;ghi" str="defghi"/>
+<test rgx="(?aa:abc)?def\Kaa;ghi" str="defghi" ="defghi"/>
+
+<test rgx="(?/aa:a\gaa;?b)x\gaa;y" str="xaaabbby" ="xaaabbby"/>
+<test rgx="(?/aa:a\gaa;?b)x\gaa;y" str="xaabbby"/>
+<test rgx="(?/aa:a\gaa;?b)x\gaa;y" str="xaaabby"/>
+
+<test rgx="(?/aa:bc)def" str="abcdef" ="def"/>
+<test rgx="(?/aa:bc)a\gaa;def" str="abcdef" ="abcdef"/>
+<test rgx="(?/aa:bc)a\Gaa;def" str="adef" ="adef"/>
+<test rgx="(?/aa:bc)a\gaa;def" str="adef"/>
+<test rgx="(?/aa:bc)a\Gaa;def" str="abcdef"/>
+
+<test rgx="    a [ b ] [ ^ e-g ] (?= d ) d e\ f  " str="abcde f" ="abcde f"/>
+
+<test rgx="abc(?<=^a(?1:b)c)def"        str="abcdef" ="abcdef" 1="b"/>
+<test rgx="abc(?<=abc|ab)def"           str="abcdef" ="abcdef"/>
+<test rgx="ab(?<=abc|ab)def"            str="abdef"  ="abdef"/>
+<test rgx="abcd(?<=b(?=c)cd)ef"         str="abcdef" ="abcdef"/>
+<test rgx="abcd(?<=b(?!d)cd)ef"         str="abcdef" ="abcdef"/>
+<test rgx="abcd(?<=b(?=c(?!e)d)cd)ef"   str="abcdef" ="abcdef"/>
+<test rgx="abcd(?<=b(?=cd(?<=d)e)cd)ef" str="abcdef" ="abcdef"/>
+
+<test rgx="a(?=bc)bcd" str="abcd" ="abcd"/>
+<test rgx="a(?=bc)"    str="abcd" ="a"/>
+<test rgx="a(?=bc)"    str="ab"/>
+<test rgx="a(?=bc$)"   str="abc"  ="a"/>
+<test rgx="a(?!bc)"    str="abcd"/>
+<test rgx="a(?!bc)d"   str="ad"   ="ad"/>
+<test rgx="a(?!bc)"    str="ad"   ="a"/>
+<test rgx="a(?!bc)"    str="adef" ="a"/>
+<test rgx="a(?<=a)b"   str="ab"   ="ab"/>
+<test rgx="a(?<=^a)b"  str="ab"   ="ab"/>
+<test rgx="a(?<!a)b"   str="ab"/>
+<test rgx="a(?<!c)b"   str="ab"   ="ab"/>
+
+<test rgx="\babc\b"     str="abc" ="abc"/>
+<test rgx="\Babc"       str="abc"/>
+<test rgx="abc\B"       str="abc"/>
+<test rgx="\b\+abc\+\b" str="+abc+"/>
+<test rgx="\B\+abc"     str="+abc" ="+abc"/>
+<test rgx="abc\+\B"     str="abc+" ="abc+"/>
+<test rgx="a\bbc"       str="abc"/>
+<test rgx="a\Bbc"       str="abc" ="abc"/>
+<test rgx="\+\ba"       str="+a" ="+a"/>
+<test rgx="a\b\+"       str="a+" ="a+"/>
+<test rgx="\+\Ba"       str="+a"/>
+<test rgx="a\B\+"       str="a+"/>
+
+<test rgx="(?1:^^)+" str="abc" ="" 1=""/> <!-- yes, this succeeds -->
+
+<test rgx="^abc"  str="abc" ="abc"/>
+<test rgx="^bc"   str="abc"/>
+<test rgx="abc$"  str="abc" ="abc"/>
+<test rgx="ab$"   str="abc"/>
+<test rgx="^abc$" str="abc" ="abc"/>
+<test rgx="^b$"   str="abc"/>
+<test rgx="^b$"   str="bc"/>
+<test rgx="^b$"   str="ab"/>
+<test rgx="^?a"   str="abc" ="a"/>
+<test rgx="^?b"   str="abc" ="b"/>
+<test rgx="^+a"   str="abc" ="a"/>
+
+<test rgx="a\x23;c"     str="a#c" ="a#c"/>
+<test rgx="a\x0023;c"   str="a#c" ="a#c"/>
+<test rgx="a\dc"        str="a0c" ="a0c"/>
+<test rgx="a\dc"        str="abc"/>
+<test rgx="a\Dc"        str="abc" ="abc"/>
+<test rgx="a\Dc"        str="a0c"/>
+<test rgx="[\w]*"       str="abc_09" ="abc_09"/>
+<test rgx="[^\w]"       str="abc_09"/>
+<test rgx="[\w-[\d]]*"  str="abc_09" ="abc_"/>
+<test rgx="[a-f[g-j]]+" str="abcdefghij" ="abcdefghij"/>
+<test rgx="\p{gc=Lu}\p{gc=Ll}"  str="Aa" ="Aa"/>
+<!--test rgx="\p{Bl}\p{Br}"  str="<>" ="<>"/-->
+
+<test rgx="a|b|c"       str="a"   ="a"/>
+<test rgx="a|b|c"       str="b"   ="b"/>
+<test rgx="a(?1:|b|c)d" str="abd" ="abd" 1="b"/>
+<test rgx="a(?1:|b|c)d" str="ad"  ="ad"  1=""/>
+<test rgx="a(?1:b|c|)d" str="abd" ="abd" 1="b"/>
+<test rgx="a(?1:b|c|)d" str="ad"  ="ad"  1=""/>
+
+<test rgx="a[01-[^02]]b"  str="a0b" ="a0b"/>
+<test rgx="a[01-[^02]]b"  str="a1b"/>
+<test rgx="a[01-[^02]]b"  str="a2b"/>
+<test rgx="a[01-[^02]]b"  str="a3b"/>
+<test rgx="a[01-[02]]b"   str="a0b"/>
+<test rgx="a[01-[02]]b"   str="a1b" ="a1b"/>
+<test rgx="a[01-[02]]b"   str="a2b"/>
+<test rgx="a[01-[02]]b"   str="a3b"/>
+<test rgx="a[[^01]-[^02]]b" str="a0b"/>
+<test rgx="a[[^01]-[^02]]b" str="a1b"/>
+<test rgx="a[[^01]-[^02]]b" str="a2b" ="a2b"/>
+<test rgx="a[[^01]-[^02]]b" str="a3b"/>
+<test rgx="a[[^01]-[02]]b"  str="a0b"/>
+<test rgx="a[[^01]-[02]]b"  str="a1b"/>
+<test rgx="a[[^01]-[02]]b"  str="a2b"/>
+<test rgx="a[[^01]-[02]]b"  str="a3b" ="a3b"/>
+
+<test rgx="a[a-z]c"   str="abc" ="abc"/>
+<test rgx="a[^A-Z]c"  str="abc" ="abc"/>
+<test rgx="a[^A-Z]c"  str="aBc"/>
+<test rgx="a[\]b]c"   str="a]c" ="a]c"/>
+<test rgx="a[a-b\-]c" str="a-c" ="a-c"/>
+<test rgx="a[^\-]c"   str="abc" ="abc"/>
+<test rgx="a[^\-]c"   str="a-c"/>
+<test rgx="a[abc]d"   str="abd" ="abd"/>
+<test rgx="a[abc]d"   str="aed"/>
+<test rgx="a[ab]c"    str="abc" ="abc"/>
+<test rgx="a[ab]c"    str="aec"/>
+<test rgx="a[.]c"     str="abc"/>
+<test rgx="a[.]c"     str="a.c" ="a.c"/>
+<test rgx="a[^.]c"    str="abc" ="abc"/>
+<test rgx="a[^bc-e]f" str="adf"/>
+
+<test rgx="a(?1:b)c"        str="abc"   ="abc"   1="b"/>
+<test rgx="a(?1:b)c(?2:d)e" str="abcde" ="abcde" 1="b" 2="d"/>
+<test rgx="a(b)c(?1:d)e"    str="abcde" ="abcde" 1="d"/>
+<test rgx="a(?1:b(?2:c)d)e" str="abcde" ="abcde" 1="bcd" 2="c"/>
+<test rgx="a(b(?1:c)d)e"    str="abcde" ="abcde" 1="c"/>
+<test rgx="a(?1:b(c)d)e"    str="abcde" ="abcde" 1="bcd"/>
+<test rgx="a(b(c)d)e"       str="abcde" ="abcde"/>
+
+<test rgx="a.{0}c" str="ac" ="ac"/>
+<test rgx="a.{0}c" str="abc"/>
+<test rgx="a.{1}c" str="abc" ="abc"/>
+<test rgx="a.{1}c" str="abbc"/>
+<test rgx="a.{5}c" str="abbbbc"/>
+<test rgx="a.{5}c" str="abbbbbc" ="abbbbbc"/>
+<test rgx="a.{5}c" str="abbbbbbc"/>
+<test rgx="a.{2,5}c" str="abc"/>
+<test rgx="a.{2,5}c" str="abbbc" ="abbbc"/>
+<test rgx="a.{2,5}c" str="abbbbbbc"/>
+<test rgx="a.{3, }c" str="abbc"/>
+<test rgx="a.{3,}c" str="abbc"/>
+<test rgx="a.{3,}c" str="abbbc"   ="abbbc"/>
+<test rgx="a.{3,}c" str="abbbbbc" ="abbbbbc"/>
+<test rgx="a.{,5}c" str="abbbc"   ="abbbc"/>
+<test rgx="a.{,5}c" str="abbbbbc" ="abbbbbc"/>
+<test rgx="a.{,5}c" str="abbbbbbbc"/>
+
+<test rgx="abcdef" str="abcdef"  ="abcdef"/>
+<test rgx="a..def" str="abcdef"  ="abcdef"/>
+<test rgx="a.*f"   str="abcdef"  ="abcdef"/>
+<test rgx="a.*f"   str="af"      ="af"/>
+<test rgx="a.+c"   str="ac"/>
+<test rgx="a.+c"   str="abc"     ="abc"/>
+<test rgx="a.+c"   str="abbc"    ="abbc"/>
+<test rgx="a.*?f"  str="abfcdef" ="abf"/>
+<test rgx="a.?c"   str="abbc"/>
+<test rgx="a.?c"   str="abc"     ="abc"/>
+<test rgx="a.?c"   str="ac"      ="ac"/>
+
+<test rgx="(?1:a+)+" str="aaaaaaaaaaaaaaaaaaaaaaa" ="aaaaaaaaaaaaaaaaaaaaaaa" 1="aaaaaaaaaaaaaaaaaaaaaaa"/>
+<test rgx="(?1:[a-zA-Z]+)*" str="aaaaaaaaaaaaaaaaaaaaaaa" ="aaaaaaaaaaaaaaaaaaaaaaa" 1="aaaaaaaaaaaaaaaaaaaaaaa"/>
+<test rgx="(?1:a|aa)+" str="aaaaaaaaaaaaaaaaaaaaaaa" ="aaaaaaaaaaaaaaaaaaaaaaa" 1="a"/>
+<test rgx="(?1:a|a?)+" str="aaaaaaaaaaaaaaaaaaaaaaa" ="aaaaaaaaaaaaaaaaaaaaaaa" 1="a"/>
+<test rgx="(?1:.*a){10}" str="aaaaaaaaaaaaaaaaaaaaaaa" ="aaaaaaaaaaaaaaaaaaaaaaa" 1="a"/>
+<test rgx="(?1:.*)a(?2:.*)a(?3:.*)a(?4:.*)a(?5:.*)" str="aaaaaaaaa" ="aaaaaaaaa" 1="aaaaa" 2="" 3="" 4="" 5=""/>
