@@ -1483,10 +1483,16 @@ addthread(struct matcher_s * mm, rgx_threadlist * tlist, rgx_thread t)
     case OP_PROC: {
       const UChar * resume = NULL;
       UChar * sav[2] = { t.sub->ptrs[0], t.sub->ptrs[1] };
-      struct matcher_s mmtmp = *mm;
+      rgx_submatch * freetmp = mm->freesub;
       b = rgx_exec1(mm, t.pc->addr, &t.sub);
-      *mm = mmtmp;
       if (b) resume = mm->reverse ? t.sub->ptrs[0] : t.sub->ptrs[1];
+      {
+        struct matcher_s mmtmp = *mm;
+        unsigned int gentmp = mm->generation;
+        *mm = mmtmp;
+        mm->generation = gentmp;
+        mm->freesub = freetmp;
+      }
       t.sub->ptrs[0] = sav[0]; t.sub->ptrs[1] = sav[1];
       if (!b) goto drop_thread;
       tlist->threads[tlist->len++] = thread_paused(t.pc, resume, t.sub);
@@ -1496,7 +1502,13 @@ addthread(struct matcher_s * mm, rgx_threadlist * tlist, rgx_thread t)
       UChar * sav[2] = { t.sub->ptrs[0], t.sub->ptrs[1] };
       struct matcher_s mmtmp = *mm;
       b = rgx_exec1(mm, t.pc->addr, &t.sub);
-      *mm = mmtmp;
+      {
+        struct matcher_s mmtmp = *mm;
+        unsigned int gentmp = mm->generation;
+        *mm = mmtmp;
+        mm->generation = gentmp;
+        mm->freesub = freetmp;
+      }
       t.sub->ptrs[0] = sav[0]; t.sub->ptrs[1] = sav[1];
       MATCH(!b);
     }
@@ -1505,7 +1517,13 @@ addthread(struct matcher_s * mm, rgx_threadlist * tlist, rgx_thread t)
       UChar * sav[2] = { t.sub->ptrs[0], t.sub->ptrs[1] };
       struct matcher_s mmtmp = *mm;
       b = rgx_exec1(mm, t.pc->addr, &t.sub);
-      *mm = mmtmp;
+      {
+        struct matcher_s mmtmp = *mm;
+        unsigned int gentmp = mm->generation;
+        *mm = mmtmp;
+        mm->generation = gentmp;
+        mm->freesub = freetmp;
+      }
       t.sub->ptrs[0] = sav[0]; t.sub->ptrs[1] = sav[1];
       addthread(mm, tlist, thread_new(t.pc + (b ? 2 : 1), t.sub));
       break;
